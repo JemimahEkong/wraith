@@ -18,7 +18,7 @@
  * `global.fetch` is a stub in every test. The naira rails have no sandbox.
  */
 import { readdirSync, readFileSync, statSync } from "fs";
-import { join } from "path";
+import { join, sep } from "path";
 import express from "express";
 import request from "supertest";
 
@@ -88,7 +88,12 @@ describe("exactly one client reaches the provider", () => {
   }
 
   const files = sourceFiles(SRC).map((path) => ({
-    path: path.slice(SRC.length + 1),
+    // Normalise to forward slashes: `join` uses the platform separator, so on
+    // Windows every path below arrived as `linq\http.ts` and compared unequal
+    // to the `linq/http.ts` these assertions are written against. The guard was
+    // satisfied; only the separator differed, so this failed on a Windows
+    // checkout and passed on CI — the worst way for a test to be wrong.
+    path: path.slice(SRC.length + 1).split(sep).join("/"),
     text: readFileSync(path, "utf8"),
   }));
 
